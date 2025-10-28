@@ -54,3 +54,11 @@ GET → /api/ai/chancellor
 
 🔹 Foreman Agent
 GET → /api/ai/foreman
+
+POST /api/notify/test
+{
+  "channel": "email",
+  "recipient": "admin@example.com",
+  "subject": "System Test",
+  "message": "This is only a test notification."
+}

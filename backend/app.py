@@ -7,6 +7,8 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from config import Config
 from datetime import datetime
 from utils.ai_agents import sentinel_agent, quartermaster_agent, chancellor_agent, foreman_agent
+from utils.notification import send_sms, send_email, notify_admins, log_notification, notify_event
+
 # Initialize extensions
 db = SQLAlchemy()
 migrate = Migrate()
@@ -116,6 +118,17 @@ def create_app():
         )
         db.session.add(record)
         db.session.commit()
+
+        if severity.lower() == "critical":
+            notify_admins(f"🚨 Critical maintenance reported for vehicle {vehicle_id}")
+
+        if severity.lower() == "critical":
+            notify_event(
+                "email",
+                "maintenance-team@example.com",
+                "⚠️ Critical Maintenance Alert",
+                f"Vehicle {vehicle_id} reported a CRITICAL issue: {description}"
+            )
 
         return jsonify({"message": "Maintenance record created successfully"}), 201
 
@@ -287,7 +300,27 @@ def create_app():
         invoice.approval_level = data.get("approval_level", invoice.approval_level)
         db.session.commit()
 
-        return jsonify({"message": "Invoice updated successfully"}), 200
+        if invoice.status.lower() == "approved":
+            send_email("finance@sitesupervisor.com", "Invoice Approved", f"Invoice #{invoice.id} approved.")
+        elif invoice.status.lower() == "rejected":
+            send_email("finance@sitesupervisor.com", "Invoice Rejected", f"Invoice #{invoice.id} was rejected.")
+
+        if invoice.status == "approved":
+            notify_event(
+                "email",
+                "finance@example.com",
+                "✅ Invoice Approved",
+                f"Invoice #{invoice.id} for supplier {invoice.supplier_id} has been approved."
+            )
+        elif invoice.status == "rejected":
+            notify_event(
+                "email",
+                "finance@example.com",
+                "❌ Invoice Rejected",
+                f"Invoice #{invoice.id} has been rejected."
+            )
+
+        return jsonify({"message": "Invoice updated successfully"}), 200    
 
 
     @app.route("/api/finance/invoices/<int:id>", methods=["DELETE"])
@@ -355,6 +388,18 @@ def create_app():
         project.completion_forecast = data.get("completion_forecast", project.completion_forecast)
         db.session.commit()
 
+        if project.status.lower() == "delayed":
+            notify_admins(f"⚠️ Project '{project.name}' has been delayed.")
+        
+        if project.status.lower() == "delayed":
+            notify_event(
+                "sms",
+                "+254700000000",
+                None,
+                f"🚧 Project '{project.name}' is delayed. Please review timeline adjustments."
+            )
+
+
         return jsonify({"message": "Project updated successfully"}), 200
 
 
@@ -418,6 +463,16 @@ def create_app():
             {"name": p.name, "status": p.status} for p in projects
         ]
         result = foreman_agent(projects_data)
+        return jsonify(result), 200
+
+    @app.route("/api/notify/test", methods=["POST"])
+    def test_notify():
+        data = request.get_json()
+        channel = data.get("channel", "email")
+        recipient = data.get("recipient", "admin@example.com")
+        subject = data.get("subject", "Test Notification")
+        message = data.get("message", "This is a test.")
+        result = notify_event(channel, recipient, subject, message)
         return jsonify(result), 200
 
 
