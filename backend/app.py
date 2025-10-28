@@ -7,7 +7,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from config import Config
 from datetime import datetime
 from utils.ai_agents import sentinel_agent, quartermaster_agent, chancellor_agent, foreman_agent
-from utils.notification import send_sms, send_email, notify_admins, log_notification, notify_event
+from utils.notification import send_sms, send_email, notify_event
 
 # Initialize extensions
 db = SQLAlchemy()
@@ -469,11 +469,12 @@ def create_app():
     def test_notify():
         data = request.get_json()
         channel = data.get("channel", "email")
-        recipient = data.get("recipient", "admin@example.com")
+        recipient = data.get("recipient")
         subject = data.get("subject", "Test Notification")
-        message = data.get("message", "This is a test.")
+        message = data.get("message", "This is a live notification test.")
         result = notify_event(channel, recipient, subject, message)
         return jsonify(result), 200
+
 
 
 
