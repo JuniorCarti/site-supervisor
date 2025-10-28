@@ -5,7 +5,8 @@ from flask_cors import CORS
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 from werkzeug.security import generate_password_hash, check_password_hash
 from config import Config
-
+from datetime import datetime
+from utils.ai_agents import sentinel_agent, quartermaster_agent, chancellor_agent, foreman_agent
 # Initialize extensions
 db = SQLAlchemy()
 migrate = Migrate()
@@ -21,11 +22,12 @@ def create_app():
     migrate.init_app(app, db)
     jwt.init_app(app)
 
-    # ------------------------------
-    # MODELS
-    # ------------------------------
+    # models
+    from models.project import Project 
+    from models.supplier import Supplier
+    from models.maintenance import MaintenanceRecord
+    from models.finance import Invoice
     from models.user import User
-    from models import maintenance, supplier, finance, project
 
     # ------------------------------
     # AUTH ROUTES (No Blueprint)
@@ -91,10 +93,6 @@ def create_app():
     # -----------------------------------------
     # MAINTENANCE ROUTES
     # -----------------------------------------
-
-    from models.maintenance import MaintenanceRecord
-    from datetime import datetime
-    from flask_jwt_extended import jwt_required
 
     @app.route("/api/maintenance", methods=["POST"])
     @jwt_required()
@@ -172,7 +170,7 @@ def create_app():
     # SUPPLIER ROUTES
     # -----------------------------------------
 
-    from models.supplier import Supplier
+
 
     @app.route("/api/suppliers", methods=["POST"])
     @jwt_required()
@@ -241,7 +239,7 @@ def create_app():
     # FINANCE ROUTES (INVOICES)
     # -----------------------------------------
 
-    from models.finance import Invoice
+   
 
     @app.route("/api/finance/invoices", methods=["POST"])
     @jwt_required()
@@ -309,7 +307,7 @@ def create_app():
     # PROJECT ROUTES
     # -----------------------------------------
 
-    from models.project import Project
+   
 
     @app.route("/api/projects", methods=["POST"])
     @jwt_required()
@@ -371,6 +369,57 @@ def create_app():
         db.session.commit()
 
         return jsonify({"message": "Project deleted successfully"}), 200
+    
+    # -----------------------------------------
+    # AI AGENT SIMULATION ROUTES
+    # -----------------------------------------
+
+
+    # 🔧 1. Sentinel Agent (Predictive Maintenance)
+    @app.route("/api/ai/sentinel", methods=["POST"])
+    @jwt_required()
+    def simulate_sentinel():
+        sensor_data = request.get_json()
+        result = sentinel_agent(sensor_data)
+        return jsonify(result), 200
+
+
+    # 🔧 2. Quartermaster Agent (Supplier Selection)
+    @app.route("/api/ai/quartermaster", methods=["GET"])
+    @jwt_required()
+    def simulate_quartermaster():
+        suppliers = Supplier.query.all()
+        suppliers_data = [
+            {"name": s.name, "rating": s.rating, "last_bid_price": s.last_bid_price}
+            for s in suppliers
+        ]
+        result = quartermaster_agent(suppliers_data)
+        return jsonify(result), 200
+
+
+    # 🔧 3. Chancellor Agent (Finance Overview)
+    @app.route("/api/ai/chancellor", methods=["GET"])
+    @jwt_required()
+    def simulate_chancellor():
+        invoices = Invoice.query.all()
+        invoices_data = [
+            {"amount": i.amount, "status": i.status} for i in invoices
+        ]
+        result = chancellor_agent(invoices_data)
+        return jsonify(result), 200
+
+
+    # 🔧 4. Foreman Agent (Project Forecast)
+    @app.route("/api/ai/foreman", methods=["GET"])
+    @jwt_required()
+    def simulate_foreman():
+        projects = Project.query.all()
+        projects_data = [
+            {"name": p.name, "status": p.status} for p in projects
+        ]
+        result = foreman_agent(projects_data)
+        return jsonify(result), 200
+
 
 
     # ------------------------------

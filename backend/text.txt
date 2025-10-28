@@ -17,37 +17,40 @@ Header:
 Authorization: Bearer <JWT_TOKEN>
 
 Maintenance Routes
-
 POST /api/maintenance/report → driver submits maintenance issue.
-
 GET /api/maintenance → manager views all reports.
-
 PATCH /api/maintenance/<id> → update status (“pending”, “in-progress”, “completed”).
 
 Supplier Routes
-
 POST /api/suppliers → add new supplier.
-
 GET /api/suppliers → list suppliers.
-
 PATCH /api/suppliers/<id> → update rating or bid.
-
 GET /api/suppliers/lowest-bid → simulate best offer selection.
 
 Finance Routes
-
 POST /api/finance/invoices → create invoice.
-
 GET /api/finance/invoices → view all invoices.
-
 PATCH /api/finance/invoices/<id> → approve or reject.
-
 Add auto-approval logic (e.g., < $500 auto-approve).
 
 Project Routes
-
 POST /api/projects → create project.
-
 GET /api/projects → list all projects.
-
 PATCH /api/projects/<id> → update status or forecast.
+
+🔹 Sentinel Agent
+POST → /api/ai/sentinel
+{
+  "temperature": 92,
+  "oil_pressure": 25,
+  "vibration": 4.8
+}
+
+🔹 Quartermaster Agent
+GET → /api/ai/quartermaster
+
+🔹 Chancellor Agent
+GET → /api/ai/chancellor
+
+🔹 Foreman Agent
+GET → /api/ai/foreman
