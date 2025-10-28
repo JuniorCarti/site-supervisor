@@ -1,0 +1,391 @@
+from flask import Flask, request, jsonify
+from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
+from flask_cors import CORS
+from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
+from werkzeug.security import generate_password_hash, check_password_hash
+from config import Config
+
+# Initialize extensions
+db = SQLAlchemy()
+migrate = Migrate()
+jwt = JWTManager()
+
+def create_app():
+    app = Flask(__name__)
+    app.config.from_object(Config)
+
+    # Initialize extensions
+    CORS(app)
+    db.init_app(app)
+    migrate.init_app(app, db)
+    jwt.init_app(app)
+
+    # ------------------------------
+    # MODELS
+    # ------------------------------
+    from models.user import User
+    from models import maintenance, supplier, finance, project
+
+    # ------------------------------
+    # AUTH ROUTES (No Blueprint)
+    # ------------------------------
+
+    # --- Register ---
+    @app.route("/api/auth/register", methods=["POST"])
+    def register():
+        data = request.get_json()
+        name = data.get("name")
+        email = data.get("email")
+        password = data.get("password")
+        role = data.get("role", "driver")
+
+        if not all([name, email, password]):
+            return jsonify({"error": "Missing fields"}), 400
+
+        if User.query.filter_by(email=email).first():
+            return jsonify({"error": "Email already registered"}), 400
+
+        hashed_pw = generate_password_hash(password)
+        new_user = User(name=name, email=email, password=hashed_pw, role=role)
+        db.session.add(new_user)
+        db.session.commit()
+
+        return jsonify({"message": f"User {name} registered successfully"}), 201
+
+
+    # --- Login ---
+    @app.route("/api/auth/login", methods=["POST"])
+    def login():
+        data = request.get_json()
+        email = data.get("email")
+        password = data.get("password")
+
+        user = User.query.filter_by(email=email).first()
+        if not user or not check_password_hash(user.password, password):
+            return jsonify({"error": "Invalid credentials"}), 401
+
+        access_token = create_access_token(identity=user.id, additional_claims={"role": user.role})
+        return jsonify({
+            "token": access_token,
+            "user": {"id": user.id, "name": user.name, "email": user.email, "role": user.role}
+        }), 200
+
+
+    # --- Profile (Protected) ---
+    @app.route("/api/auth/profile", methods=["GET"])
+    @jwt_required()
+    def profile():
+        user_id = get_jwt_identity()
+        user = User.query.get(user_id)
+        if not user:
+            return jsonify({"error": "User not found"}), 404
+
+        return jsonify({
+            "id": user.id,
+            "name": user.name,
+            "email": user.email,
+            "role": user.role
+        }), 200
+    
+    # -----------------------------------------
+    # MAINTENANCE ROUTES
+    # -----------------------------------------
+
+    from models.maintenance import MaintenanceRecord
+    from datetime import datetime
+    from flask_jwt_extended import jwt_required
+
+    @app.route("/api/maintenance", methods=["POST"])
+    @jwt_required()
+    def create_maintenance():
+        data = request.get_json()
+        vehicle_id = data.get("vehicle_id")
+        description = data.get("description")
+        severity = data.get("severity", "low")
+        image_path = data.get("image_path")
+
+        if not vehicle_id or not description:
+            return jsonify({"error": "Missing required fields"}), 400
+
+        record = MaintenanceRecord(
+            vehicle_id=vehicle_id,
+            description=description,
+            severity=severity,
+            image_path=image_path,
+            status="pending",
+            created_at=datetime.utcnow(),
+        )
+        db.session.add(record)
+        db.session.commit()
+
+        return jsonify({"message": "Maintenance record created successfully"}), 201
+
+
+    @app.route("/api/maintenance", methods=["GET"])
+    @jwt_required()
+    def get_maintenance():
+        records = MaintenanceRecord.query.order_by(MaintenanceRecord.created_at.desc()).all()
+        results = [
+            {
+                "id": r.id,
+                "vehicle_id": r.vehicle_id,
+                "description": r.description,
+                "severity": r.severity,
+                "status": r.status,
+                "created_at": r.created_at.strftime("%Y-%m-%d %H:%M:%S"),
+            }
+            for r in records
+        ]
+        return jsonify(results), 200
+
+
+    @app.route("/api/maintenance/<int:id>", methods=["PATCH"])
+    @jwt_required()
+    def update_maintenance(id):
+        record = MaintenanceRecord.query.get(id)
+        if not record:
+            return jsonify({"error": "Record not found"}), 404
+
+        data = request.get_json()
+        record.status = data.get("status", record.status)
+        record.severity = data.get("severity", record.severity)
+        db.session.commit()
+
+        return jsonify({"message": "Record updated successfully"}), 200
+
+
+    @app.route("/api/maintenance/<int:id>", methods=["DELETE"])
+    @jwt_required()
+    def delete_maintenance(id):
+        record = MaintenanceRecord.query.get(id)
+        if not record:
+            return jsonify({"error": "Record not found"}), 404
+
+        db.session.delete(record)
+        db.session.commit()
+
+        return jsonify({"message": "Record deleted successfully"}), 200
+    
+
+    # -----------------------------------------
+    # SUPPLIER ROUTES
+    # -----------------------------------------
+
+    from models.supplier import Supplier
+
+    @app.route("/api/suppliers", methods=["POST"])
+    @jwt_required()
+    def create_supplier():
+        data = request.get_json()
+        name = data.get("name")
+        contact = data.get("contact")
+
+        if not name:
+            return jsonify({"error": "Supplier name is required"}), 400
+
+        supplier = Supplier(name=name, contact=contact)
+        db.session.add(supplier)
+        db.session.commit()
+
+        return jsonify({"message": f"Supplier {name} added successfully"}), 201
+
+
+    @app.route("/api/suppliers", methods=["GET"])
+    @jwt_required()
+    def get_suppliers():
+        suppliers = Supplier.query.all()
+        results = [
+            {
+                "id": s.id,
+                "name": s.name,
+                "contact": s.contact,
+                "rating": s.rating,
+                "last_bid_price": s.last_bid_price,
+            }
+            for s in suppliers
+        ]
+        return jsonify(results), 200
+
+
+    @app.route("/api/suppliers/<int:id>", methods=["PATCH"])
+    @jwt_required()
+    def update_supplier(id):
+        supplier = Supplier.query.get(id)
+        if not supplier:
+            return jsonify({"error": "Supplier not found"}), 404
+
+        data = request.get_json()
+        supplier.rating = data.get("rating", supplier.rating)
+        supplier.last_bid_price = data.get("last_bid_price", supplier.last_bid_price)
+        db.session.commit()
+
+        return jsonify({"message": "Supplier updated successfully"}), 200
+
+
+    @app.route("/api/suppliers/<int:id>", methods=["DELETE"])
+    @jwt_required()
+    def delete_supplier(id):
+        supplier = Supplier.query.get(id)
+        if not supplier:
+            return jsonify({"error": "Supplier not found"}), 404
+
+        db.session.delete(supplier)
+        db.session.commit()
+
+        return jsonify({"message": "Supplier deleted successfully"}), 200
+
+
+
+    # -----------------------------------------
+    # FINANCE ROUTES (INVOICES)
+    # -----------------------------------------
+
+    from models.finance import Invoice
+
+    @app.route("/api/finance/invoices", methods=["POST"])
+    @jwt_required()
+    def create_invoice():
+        data = request.get_json()
+        supplier_id = data.get("supplier_id")
+        amount = data.get("amount")
+
+        if not supplier_id or not amount:
+            return jsonify({"error": "Supplier ID and amount are required"}), 400
+
+        invoice = Invoice(supplier_id=supplier_id, amount=amount, status="pending")
+        db.session.add(invoice)
+        db.session.commit()
+
+        return jsonify({"message": "Invoice created successfully"}), 201
+
+
+    @app.route("/api/finance/invoices", methods=["GET"])
+    @jwt_required()
+    def get_invoices():
+        invoices = Invoice.query.all()
+        results = [
+            {
+                "id": i.id,
+                "supplier_id": i.supplier_id,
+                "amount": i.amount,
+                "status": i.status,
+                "created_at": i.created_at.strftime("%Y-%m-%d %H:%M:%S"),
+            }
+            for i in invoices
+        ]
+        return jsonify(results), 200
+
+
+    @app.route("/api/finance/invoices/<int:id>", methods=["PATCH"])
+    @jwt_required()
+    def update_invoice(id):
+        invoice = Invoice.query.get(id)
+        if not invoice:
+            return jsonify({"error": "Invoice not found"}), 404
+
+        data = request.get_json()
+        invoice.status = data.get("status", invoice.status)
+        invoice.approval_level = data.get("approval_level", invoice.approval_level)
+        db.session.commit()
+
+        return jsonify({"message": "Invoice updated successfully"}), 200
+
+
+    @app.route("/api/finance/invoices/<int:id>", methods=["DELETE"])
+    @jwt_required()
+    def delete_invoice(id):
+        invoice = Invoice.query.get(id)
+        if not invoice:
+            return jsonify({"error": "Invoice not found"}), 404
+
+        db.session.delete(invoice)
+        db.session.commit()
+
+        return jsonify({"message": "Invoice deleted successfully"}), 200
+    
+
+    # -----------------------------------------
+    # PROJECT ROUTES
+    # -----------------------------------------
+
+    from models.project import Project
+
+    @app.route("/api/projects", methods=["POST"])
+    @jwt_required()
+    def create_project():
+        data = request.get_json()
+        name = data.get("name")
+        description = data.get("description")
+
+        if not name:
+            return jsonify({"error": "Project name is required"}), 400
+
+        project = Project(name=name, description=description, status="active")
+        db.session.add(project)
+        db.session.commit()
+
+        return jsonify({"message": f"Project {name} created successfully"}), 201
+
+
+    @app.route("/api/projects", methods=["GET"])
+    @jwt_required()
+    def get_projects():
+        projects = Project.query.all()
+        results = [
+            {
+                "id": p.id,
+                "name": p.name,
+                "description": p.description,
+                "status": p.status,
+                "completion_forecast": p.completion_forecast,
+            }
+            for p in projects
+        ]
+        return jsonify(results), 200
+
+
+    @app.route("/api/projects/<int:id>", methods=["PATCH"])
+    @jwt_required()
+    def update_project(id):
+        project = Project.query.get(id)
+        if not project:
+            return jsonify({"error": "Project not found"}), 404
+
+        data = request.get_json()
+        project.status = data.get("status", project.status)
+        project.completion_forecast = data.get("completion_forecast", project.completion_forecast)
+        db.session.commit()
+
+        return jsonify({"message": "Project updated successfully"}), 200
+
+
+    @app.route("/api/projects/<int:id>", methods=["DELETE"])
+    @jwt_required()
+    def delete_project(id):
+        project = Project.query.get(id)
+        if not project:
+            return jsonify({"error": "Project not found"}), 404
+
+        db.session.delete(project)
+        db.session.commit()
+
+        return jsonify({"message": "Project deleted successfully"}), 200
+
+
+    # ------------------------------
+    # ROOT TEST ROUTE
+    # ------------------------------
+    @app.route("/")
+    def home():
+        return {"message": "SiteSupervisor Backend API running 🚀"}
+
+    return app
+
+
+
+
+app = create_app()
+
+if __name__ == "__main__":
+    app.run(debug=True)
