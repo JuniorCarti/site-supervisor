@@ -43,6 +43,8 @@ class AppColors {
     end: Alignment.bottomRight,
     colors: [Color(0xFFD32F2F), Color(0xFFC62828)],
   );
+
+  static var infoGradient;
 }
 
 class AppTextStyles {
