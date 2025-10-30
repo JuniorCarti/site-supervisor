@@ -1,6 +1,10 @@
 from app import db
 from datetime import datetime
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> accd6dbe87d79b2e6bd05fafa626cb13092b4ed7
 class MaintenanceRecord(db.Model):
     __tablename__ = "maintenance_records"
 

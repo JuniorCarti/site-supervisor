@@ -62,3 +62,63 @@ POST /api/notify/test
   "subject": "System Test",
   "message": "This is only a test notification."
 }
+<<<<<<< HEAD
+=======
+
+POST /api/automation/test
+{
+  "event": "test_trigger",
+  "payload": {"message": "Automation connected successfully"}
+}
+
+GET /api/analytics/overview
+
+
+role based access
+
+| Area                         | Access          | Decorator                                      |
+| ---------------------------- | --------------- | ---------------------------------------------- |
+| Register users               | Admin only      | `@role_required("admin")`                      |
+| Maintenance report           | All users       | `@role_required("driver", "manager", "admin")` |
+| Finance / Project management | Manager + Admin | `@role_required("manager", "admin")`           |
+| Analytics                    | Manager + Admin | `@role_required("manager", "admin")`           |
+
+
+
+🧩 SiteSupervisor Role-Based Access Matrix
+Module / Feature	Endpoint / Functionality	Admin	Manager	Driver	Notes / Purpose
+🔐 Authentication	/api/auth/register	✅	❌	❌	Only Admin can register new users and assign roles
+	/api/auth/login	✅	✅	✅	All roles can log in
+	/api/auth/profile	✅	✅	✅	All roles can view their own profile
+
+| 🧰 Maintenance Management | /api/maintenance (POST) | ✅ | ✅ | ✅ | Drivers report issues, managers/admins can too |
+| | /api/maintenance (GET) | ✅ | ✅ | ✅ | Everyone can view maintenance logs |
+| | /api/maintenance/<id> (PATCH) | ✅ | ✅ | ❌ | Only Admin & Manager can update maintenance records |
+| | /api/maintenance/<id> (DELETE) | ✅ | ✅ | ❌ | Only Admin & Manager can delete maintenance records |
+
+| 🧾 Supplier Management | /api/suppliers (POST) | ✅ | ✅ | ❌ | Managers/Admins can add suppliers |
+| | /api/suppliers (GET) | ✅ | ✅ | ✅ | All users can view suppliers |
+| | /api/suppliers/<id> (PATCH) | ✅ | ✅ | ❌ | Managers/Admins update supplier rating or bids |
+| | /api/suppliers/<id> (DELETE) | ✅ | ✅ | ❌ | Managers/Admins remove suppliers |
+
+| 💰 Finance (Invoices) | /api/finance/invoices (POST) | ✅ | ✅ | ❌ | Only Managers/Admins create invoices |
+| | /api/finance/invoices (GET) | ✅ | ✅ | ✅ | All roles can view invoices |
+| | /api/finance/invoices/<id> (PATCH) | ✅ | ✅ | ❌ | Managers/Admins approve/reject invoices |
+| | /api/finance/invoices/<id> (DELETE) | ✅ | ✅ | ❌ | Managers/Admins can delete invoices |
+
+| 🏗 Project Management | /api/projects (POST) | ✅ | ✅ | ❌ | Managers/Admins create projects |
+| | /api/projects (GET) | ✅ | ✅ | ✅ | All users can view project summaries |
+| | /api/projects/<id> (PATCH) | ✅ | ✅ | ❌ | Managers/Admins update project status |
+| | /api/projects/<id> (DELETE) | ✅ | ✅ | ❌ | Managers/Admins can delete projects |
+
+| 🤖 AI Agent Simulations | /api/ai/sentinel | ✅ | ✅ | ✅ | Accessible to all roles for simulation |
+| | /api/ai/quartermaster | ✅ | ✅ | ✅ | Supplier optimization view |
+| | /api/ai/chancellor | ✅ | ✅ | ✅ | Finance AI overview |
+| | /api/ai/foreman | ✅ | ✅ | ✅ | Project forecasting simulation |
+
+| 📊 Analytics & Insights | /api/analytics/overview | ✅ | ✅ | ❌ | Admin/Manager access only (dashboard metrics) |
+
+| 🧠 Automation & Notifications | /api/automation/test, /api/notify/test | ✅ | ✅ | ✅ | Test endpoints open for all (can restrict later) |
+
+| 🌍 System & Misc | / | ✅ | ✅ | ✅ | Root test endpoint for all users |
+>>>>>>> accd6dbe87d79b2e6bd05fafa626cb13092b4ed7
