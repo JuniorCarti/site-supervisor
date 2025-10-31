@@ -157,7 +157,7 @@ def create_app():
     @app.route("/api/maintenance", methods=["POST"])
     #@jwt_required()
     @cross_origin()
-    # @role_required("driver", "manager", "admin")
+    @role_required("driver", "manager", "admin")
     
     def create_maintenance():
         data = request.get_json()
@@ -445,7 +445,7 @@ def create_app():
     # -----------------------------------------
     @app.route("/api/projects", methods=["POST"])
     #@jwt_required()
-    # @role_required("manager", "admin")
+    @role_required("manager", "admin")
     def create_project():
         data = request.get_json()
         name = data.get("name")
