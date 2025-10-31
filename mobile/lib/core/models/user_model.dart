@@ -29,7 +29,7 @@ class User {
     );
   }
 
-  get avatar => null;
+  Null get avatar => null;
 
   Map<String, dynamic> toJson() {
     return {

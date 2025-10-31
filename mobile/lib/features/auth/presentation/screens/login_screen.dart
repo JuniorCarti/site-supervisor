@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:lottie/lottie.dart';
 import 'package:animations/animations.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../../shared/widgets/animated_button.dart';
