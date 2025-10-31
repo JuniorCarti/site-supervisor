@@ -2,8 +2,8 @@ from flask import Flask, request, jsonify
 from functools import wraps
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
-from flask_cors import CORS
-from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity,verify_jwt_in_request, get_jwt
+from flask_cors import CORS,cross_origin
+from flask_jwt_extended import JWTManager, create_access_token,get_jwt_identity,verify_jwt_in_request, get_jwt
 from werkzeug.security import generate_password_hash, check_password_hash
 from config import Config
 from datetime import datetime
@@ -18,6 +18,7 @@ db = SQLAlchemy()
 migrate = Migrate()
 jwt = JWTManager()
 
+
 # ----------------------------------------------------------
 # 🔐 ROLE-BASED ACCESS DECORATOR
 # ----------------------------------------------------------
@@ -25,7 +26,7 @@ def role_required(*roles):
     """
     Restrict access to users with certain roles.
     Example:
-        @jwt_required()
+        #@jwt_required()
         @role_required("admin", "manager")
         def protected(): ...
     """
@@ -52,7 +53,7 @@ def create_app():
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False  # ✅ Performance improvement
 
     # Initialize extensions
-    CORS(app)
+    CORS(app, resources={r"/api/*": {"origins": "*"}})
     db.init_app(app)
     migrate.init_app(app, db)
     jwt.init_app(app)
@@ -77,7 +78,7 @@ def create_app():
         name = data.get("name")
         email = data.get("email", "").lower()
         password = data.get("password")
-        role = data.get("role", "driver")
+        role = data.get("role", "driver").lower()
 
         # ✅ Validate role
         if role not in [r.value for r in UserRole]:
@@ -119,7 +120,7 @@ def create_app():
 
         # ✅ Use user.role.value for JWT since Enums aren’t JSON serializable
         access_token = create_access_token(
-            identity=user.id,
+            identity=str(user.id),
             additional_claims={"role": user.role.value}
         )
 
@@ -135,7 +136,7 @@ def create_app():
 
 
     @app.route("/api/auth/profile", methods=["GET"])
-    @jwt_required()
+    #@jwt_required()
     def profile():
         user_id = get_jwt_identity()
         user = User.query.get(user_id)
@@ -154,7 +155,8 @@ def create_app():
     # MAINTENANCE ROUTES
     # -----------------------------------------
     @app.route("/api/maintenance", methods=["POST"])
-    @jwt_required()
+    #@jwt_required()
+    @cross_origin()
     @role_required("driver", "manager", "admin")
     
     def create_maintenance():
@@ -199,7 +201,8 @@ def create_app():
 
 
     @app.route("/api/maintenance", methods=["GET"])
-    @jwt_required()
+    #@jwt_required()
+    @cross_origin()
     def get_maintenance():
         records = MaintenanceRecord.query.order_by(MaintenanceRecord.created_at.desc()).all()
         results = [
@@ -217,7 +220,8 @@ def create_app():
 
 
     @app.route("/api/maintenance/<int:id>", methods=["PATCH"])
-    @jwt_required()
+    #@jwt_required()
+    @cross_origin()
     @role_required("manager", "admin")
     def update_maintenance(id):
         record = MaintenanceRecord.query.get(id)
@@ -238,7 +242,8 @@ def create_app():
 
 
     @app.route("/api/maintenance/<int:id>", methods=["DELETE"])
-    @jwt_required()
+    #@jwt_required()
+    @cross_origin()
     def delete_maintenance(id):
         record = MaintenanceRecord.query.get(id)
         if not record:
@@ -257,7 +262,7 @@ def create_app():
     # SUPPLIER ROUTES
     # -----------------------------------------
     @app.route("/api/suppliers", methods=["POST"])
-    @jwt_required()
+    
     def create_supplier():
         data = request.get_json()
         name = data.get("name")
@@ -278,7 +283,7 @@ def create_app():
 
 
     @app.route("/api/suppliers", methods=["GET"])
-    @jwt_required()
+    
     def get_suppliers():
         suppliers = Supplier.query.all()
         results = [
@@ -295,7 +300,7 @@ def create_app():
 
 
     @app.route("/api/suppliers/<int:id>", methods=["PATCH"])
-    @jwt_required()
+    
     def update_supplier(id):
         supplier = Supplier.query.get(id)
         if not supplier:
@@ -315,7 +320,7 @@ def create_app():
 
 
     @app.route("/api/suppliers/<int:id>", methods=["DELETE"])
-    @jwt_required()
+    
     def delete_supplier(id):
         supplier = Supplier.query.get(id)
         if not supplier:
@@ -334,10 +339,10 @@ def create_app():
     # FINANCE ROUTES (INVOICES)
     # -----------------------------------------
     @app.route("/api/finance/invoices", methods=["POST"])
-    @jwt_required()
-    @role_required("manager", "admin")
+    
+    # @role_required("manager", "admin")
     def create_invoice():
-        data = request.get_json()
+        data = request.get_json(force=True)
         supplier_id = data.get("supplier_id")
         amount = data.get("amount")
 
@@ -357,7 +362,7 @@ def create_app():
 
 
     @app.route("/api/finance/invoices", methods=["GET"])
-    @jwt_required()
+    
     def get_invoices():
         invoices = Invoice.query.all()
         results = [
@@ -374,7 +379,7 @@ def create_app():
 
 
     @app.route("/api/finance/invoices/<int:id>", methods=["PATCH"])
-    @jwt_required()
+    
     def update_invoice(id):
         invoice = Invoice.query.get(id)
         if not invoice:
@@ -420,7 +425,7 @@ def create_app():
 
 
     @app.route("/api/finance/invoices/<int:id>", methods=["DELETE"])
-    @jwt_required()
+
     def delete_invoice(id):
         invoice = Invoice.query.get(id)
         if not invoice:
@@ -439,7 +444,7 @@ def create_app():
     # PROJECT ROUTES
     # -----------------------------------------
     @app.route("/api/projects", methods=["POST"])
-    @jwt_required()
+    #@jwt_required()
     @role_required("manager", "admin")
     def create_project():
         data = request.get_json()
@@ -472,7 +477,7 @@ def create_app():
 
 
     @app.route("/api/projects", methods=["GET"])
-    @jwt_required()
+    #@jwt_required()
     def get_projects():
         projects = Project.query.all()
         results = [
@@ -489,35 +494,30 @@ def create_app():
 
 
     @app.route("/api/projects/<int:id>", methods=["PATCH"])
-    @jwt_required()
+    #@jwt_required()
     def update_project(id):
         project = Project.query.get(id)
         if not project:
             return jsonify({"error": "Project not found"}), 404
 
         data = request.get_json()
+
+        # ✅ Update all editable fields
+        project.name = data.get("name", project.name)
+        project.description = data.get("description", project.description)
         project.status = data.get("status", project.status)
         project.completion_forecast = data.get("completion_forecast", project.completion_forecast)
 
         try:
             db.session.commit()
+            return jsonify({"message": "Project updated successfully"}), 200
         except Exception as e:
             db.session.rollback()
             return jsonify({"error": str(e)}), 500
 
-        if project.status and project.status.lower() == "delayed":
-            notify_event(
-                "sms",
-                "+254700000000",
-                None,
-                f"🚧 Project '{project.name}' is delayed. Please review timeline adjustments."
-            )
-
-        return jsonify({"message": "Project updated successfully"}), 200
-
 
     @app.route("/api/projects/<int:id>", methods=["DELETE"])
-    @jwt_required()
+    #@jwt_required()
     def delete_project(id):
         project = Project.query.get(id)
         if not project:
@@ -536,7 +536,7 @@ def create_app():
     # AI AGENT SIMULATION ROUTES
     # -----------------------------------------
     @app.route("/api/ai/sentinel", methods=["POST"])
-    @jwt_required()
+    #@jwt_required()
     def simulate_sentinel():
         sensor_data = request.get_json()
         result = sentinel_agent(sensor_data)
@@ -544,7 +544,7 @@ def create_app():
 
 
     @app.route("/api/ai/quartermaster", methods=["GET"])
-    @jwt_required()
+    #@jwt_required()
     def simulate_quartermaster():
         suppliers = Supplier.query.all()
         suppliers_data = [
@@ -556,7 +556,7 @@ def create_app():
 
 
     @app.route("/api/ai/chancellor", methods=["GET"])
-    @jwt_required()
+    #@jwt_required()
     def simulate_chancellor():
         invoices = Invoice.query.all()
         invoices_data = [{"amount": i.amount, "status": i.status} for i in invoices]
@@ -565,7 +565,7 @@ def create_app():
 
 
     @app.route("/api/ai/foreman", methods=["GET"])
-    @jwt_required()
+    #@jwt_required()
     def simulate_foreman():
         projects = Project.query.all()
         projects_data = [{"name": p.name, "status": p.status} for p in projects]
@@ -598,28 +598,25 @@ def create_app():
     # ADVANCED ANALYTICS ROUTE
     # -----------------------------------------
     @app.route("/api/analytics/overview", methods=["GET"])
-    @jwt_required()
-    @role_required("admin", "manager") 
-    def analytics_overview():
-        """
-        Returns dashboard metrics, trend data, and AI-generated insights.
-        """
+    def get_analytics_overview():
         try:
-            stats = get_dashboard_stats(db)
-            trend = get_trend_data(db, days=30)
-            insight = generate_analytics_insight(stats, trend)
+            total_projects = Project.query.count()
+            total_maintenance = MaintenanceRecord.query.count()
+            total_suppliers = Supplier.query.count()
+            total_invoices = Invoice.query.count()
 
             return jsonify({
-                "status": "success",
-                "data": stats,
-                "trend": trend,
-                "ai_insight": insight
+                "total_projects": total_projects,
+                "total_maintenance": total_maintenance,
+                "total_suppliers": total_suppliers,
+                "total_invoices": total_invoices
             }), 200
+
         except Exception as e:
-            print(f"Analytics error: {e}")
+            print("Analytics error:", e)
             return jsonify({"error": str(e)}), 500
 
-        
+            
 
     # ------------------------------
     # ROOT TEST ROUTE
