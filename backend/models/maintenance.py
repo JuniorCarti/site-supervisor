@@ -1,7 +1,6 @@
 from app import db
 from datetime import datetime
 
-
 class MaintenanceRecord(db.Model):
     __tablename__ = "maintenance_records"
 

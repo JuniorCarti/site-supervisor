@@ -62,6 +62,8 @@ POST /api/notify/test
   "subject": "System Test",
   "message": "This is only a test notification."
 }
+<<<<<<< HEAD
+=======
 
 POST /api/automation/test
 {
@@ -119,3 +121,4 @@ Module / Feature	Endpoint / Functionality	Admin	Manager	Driver	Notes / Purpose
 | 🧠 Automation & Notifications | /api/automation/test, /api/notify/test | ✅ | ✅ | ✅ | Test endpoints open for all (can restrict later) |
 
 | 🌍 System & Misc | / | ✅ | ✅ | ✅ | Root test endpoint for all users |
+>>>>>>> accd6dbe87d79b2e6bd05fafa626cb13092b4ed7
