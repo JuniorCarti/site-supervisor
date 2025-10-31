@@ -306,15 +306,15 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                 ),
                 const SizedBox(height: 8),
                 DropdownButtonFormField<String>(
-                  value: _selectedRole,
+                  initialValue: _selectedRole,
                   decoration: InputDecoration(
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: AppColors.outline),
+                      borderSide: const BorderSide(color: AppColors.outline),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: AppColors.outline),
+                      borderSide: const BorderSide(color: AppColors.outline),
                     ),
                     filled: true,
                     fillColor: AppColors.surface,

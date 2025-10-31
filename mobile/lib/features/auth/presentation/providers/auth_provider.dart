@@ -1,5 +1,4 @@
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'package:site_supervisor/core/services/api_service.dart';
 
 class AuthProvider with ChangeNotifier {

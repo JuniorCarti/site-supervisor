@@ -71,7 +71,7 @@ def create_app():
 # ------------------------------
 
     @app.route("/api/auth/register", methods=["POST"])
-    @jwt_required()
+    
     def register():
         data = request.get_json()
         name = data.get("name")
