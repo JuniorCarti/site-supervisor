@@ -94,50 +94,84 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     final authProvider = context.watch<AuthProvider>();
     
     return Scaffold(
-      backgroundColor: AppColors.background,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: AnimatedBuilder(
-            animation: _animationController,
-            builder: (context, child) {
-              return Transform.translate(
-                offset: Offset(0, _slideAnimation.value),
-                child: Opacity(
-                  opacity: _fadeAnimation.value,
-                  child: child,
+      body: Stack(
+        children: [
+          // Background Image with Overlay
+          _buildBackground(),
+          
+          SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: AnimatedBuilder(
+                animation: _animationController,
+                builder: (context, child) {
+                  return Transform.translate(
+                    offset: Offset(0, _slideAnimation.value),
+                    child: Opacity(
+                      opacity: _fadeAnimation.value,
+                      child: child,
+                    ),
+                  );
+                },
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 40),
+                    
+                    // Logo and Title
+                    _buildHeader(),
+                    
+                    const SizedBox(height: 48),
+                    
+                    // Auth Card
+                    OpenContainer(
+                      closedColor: Colors.transparent,
+                      openColor: AppColors.surface,
+                      closedElevation: 0,
+                      openElevation: 8,
+                      closedShape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                      transitionDuration: const Duration(milliseconds: 600),
+                      closedBuilder: (context, action) {
+                        return _buildAuthCard(authProvider);
+                      },
+                      openBuilder: (context, action) {
+                        return _buildAuthCard(authProvider);
+                      },
+                    ),
+                  ],
                 ),
-              );
-            },
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 40),
-                
-                // Animated Logo and Title
-                _buildHeader(),
-                
-                const SizedBox(height: 48),
-                
-                // Auth Card
-                OpenContainer(
-                  closedColor: Colors.transparent,
-                  openColor: AppColors.surface,
-                  closedElevation: 0,
-                  openElevation: 8,
-                  closedShape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(24),
-                  ),
-                  transitionDuration: const Duration(milliseconds: 600),
-                  closedBuilder: (context, action) {
-                    return _buildAuthCard(authProvider);
-                  },
-                  openBuilder: (context, action) {
-                    return _buildAuthCard(authProvider);
-                  },
-                ),
-              ],
+              ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBackground() {
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      decoration: BoxDecoration(
+        image: DecorationImage(
+          image: NetworkImage(
+            'https://images.pexels.com/photos/60008/brown-coal-energy-garzweiler-bucket-wheel-excavators-60008.jpeg',
+          ),
+          fit: BoxFit.cover,
+        ),
+      ),
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Colors.black.withOpacity(0.6),
+              Colors.black.withOpacity(0.4),
+              Colors.black.withOpacity(0.6),
+            ],
           ),
         ),
       ),
@@ -148,22 +182,27 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Animated Lottie - Using icon as fallback
-        SizedBox(
-          height: 150,
+        // Logo Container
+        Container(
+          width: 80,
+          height: 80,
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.9),
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.2),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
           child: Center(
-            child: Container(
-              width: 100,
-              height: 100,
-              decoration: BoxDecoration(
-                gradient: AppColors.primaryGradient,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: const Icon(
-                Icons.construction,
-                color: Colors.white,
-                size: 40,
-              ),
+            child: Lottie.asset(
+              'assets/animations/construction.json',
+              width: 50,
+              height: 50,
+              fit: BoxFit.contain,
             ),
           ),
         ),
@@ -174,10 +213,15 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
         Text(
           'SiteSupervisor',
           style: AppTextStyles.headlineLarge.copyWith(
-            foreground: Paint()
-              ..shader = AppColors.primaryGradient.createShader(
-                const Rect.fromLTWH(0, 0, 200, 50),
+            fontWeight: FontWeight.w700,
+            color: Colors.white,
+            shadows: [
+              Shadow(
+                blurRadius: 10,
+                color: Colors.black.withOpacity(0.5),
+                offset: const Offset(2, 2),
               ),
+            ],
           ),
         ),
         
@@ -186,7 +230,14 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
         Text(
           'Intelligent Construction Fleet Management',
           style: AppTextStyles.bodyMedium.copyWith(
-            color: AppColors.onSurfaceVariant,
+            color: Colors.white.withOpacity(0.9),
+            shadows: [
+              Shadow(
+                blurRadius: 5,
+                color: Colors.black.withOpacity(0.5),
+                offset: const Offset(1, 1),
+              ),
+            ],
           ),
         ),
       ],
@@ -195,221 +246,242 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
 
   Widget _buildAuthCard(AuthProvider authProvider) {
     return Card(
-      elevation: 8,
+      elevation: 16,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(24),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Header
-              Text(
-                _isLogin ? 'Welcome Back' : 'Create Account',
-                style: AppTextStyles.headlineSmall,
-                textAlign: TextAlign.center,
-              ),
-              
-              const SizedBox(height: 8),
-              
-              Text(
-                _isLogin 
-                    ? 'Sign in to continue' 
-                    : 'Join SiteSupervisor today',
-                style: AppTextStyles.bodyMedium.copyWith(
-                  color: AppColors.onSurfaceVariant,
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(24),
+          color: Colors.white.withOpacity(0.95),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Header
+                Text(
+                  _isLogin ? 'Welcome Back' : 'Create Account',
+                  style: AppTextStyles.headlineSmall.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.onSurface,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-                textAlign: TextAlign.center,
-              ),
-              
-              const SizedBox(height: 32),
-              
-              // Name Field (only for registration)
-              if (!_isLogin)
-                Column(
-                  children: [
-                    InputField(
-                      controller: _nameController,
-                      label: 'Full Name',
-                      prefixIcon: Icons.person_outline,
-                      validator: (value) {
-                        if (!_isLogin && (value == null || value.isEmpty)) {
-                          return 'Please enter your name';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                  ],
-                ),
-              
-              // Email Field
-              InputField(
-                controller: _emailController,
-                label: 'Email Address',
-                prefixIcon: Icons.email_outlined,
-                keyboardType: TextInputType.emailAddress,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your email';
-                  }
-                  if (!value.contains('@')) {
-                    return 'Please enter a valid email';
-                  }
-                  return null;
-                },
-              ),
-              
-              const SizedBox(height: 16),
-              
-              // Password Field
-              InputField(
-                controller: _passwordController,
-                label: 'Password',
-                prefixIcon: Icons.lock_outline,
-                obscureText: _obscurePassword,
-                suffixIcon: IconButton(
-                  icon: Icon(
-                    _obscurePassword 
-                        ? Icons.visibility_outlined 
-                        : Icons.visibility_off_outlined,
+                
+                const SizedBox(height: 8),
+                
+                Text(
+                  _isLogin 
+                      ? 'Sign in to continue' 
+                      : 'Join SiteSupervisor today',
+                  style: AppTextStyles.bodyMedium.copyWith(
                     color: AppColors.onSurfaceVariant,
                   ),
-                  onPressed: () {
-                    setState(() {
-                      _obscurePassword = !_obscurePassword;
-                    });
-                  },
+                  textAlign: TextAlign.center,
                 ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your password';
-                  }
-                  if (value.length < 6) {
-                    return 'Password must be at least 6 characters';
-                  }
-                  return null;
-                },
-              ),
-              
-              // Role Selection (only for registration)
-              if (!_isLogin) ...[
-                const SizedBox(height: 16),
-                Text(
-                  'Select Role',
-                  style: AppTextStyles.bodyMedium.copyWith(
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                DropdownButtonFormField<String>(
-                  value: _selectedRole,
-                  decoration: InputDecoration(
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: AppColors.outline),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: AppColors.outline),
-                    ),
-                    filled: true,
-                    fillColor: AppColors.surface,
-                  ),
-                  items: const [
-                    DropdownMenuItem(
-                      value: 'driver',
-                      child: Text('Driver'),
-                    ),
-                    DropdownMenuItem(
-                      value: 'manager',
-                      child: Text('Manager'),
-                    ),
-                    DropdownMenuItem(
-                      value: 'admin',
-                      child: Text('Administrator'),
-                    ),
-                  ],
-                  onChanged: (value) {
-                    setState(() {
-                      _selectedRole = value!;
-                    });
-                  },
-                ),
-              ],
-              
-              const SizedBox(height: 24),
-              
-              // Error Message
-              if (authProvider.error != null)
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: AppColors.error.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: AppColors.error.withOpacity(0.3)),
-                  ),
-                  child: Row(
+                
+                const SizedBox(height: 32),
+                
+                // Name Field (only for registration)
+                if (!_isLogin)
+                  Column(
                     children: [
-                      const Icon(Icons.error_outline, color: AppColors.error, size: 20),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          authProvider.error!,
-                          style: AppTextStyles.bodySmall.copyWith(color: AppColors.error),
-                        ),
+                      InputField(
+                        controller: _nameController,
+                        label: 'Full Name',
+                        prefixIcon: Icons.person_outline,
+                        validator: (value) {
+                          if (!_isLogin && (value == null || value.isEmpty)) {
+                            return 'Please enter your name';
+                          }
+                          return null;
+                        },
                       ),
-                      IconButton(
-                        icon: const Icon(Icons.close, size: 16),
-                        onPressed: authProvider.clearError,
-                      ),
+                      const SizedBox(height: 16),
                     ],
                   ),
+                
+                // Email Field
+                InputField(
+                  controller: _emailController,
+                  label: 'Email Address',
+                  prefixIcon: Icons.email_outlined,
+                  keyboardType: TextInputType.emailAddress,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter your email';
+                    }
+                    if (!value.contains('@')) {
+                      return 'Please enter a valid email';
+                    }
+                    return null;
+                  },
                 ),
-              
-              if (authProvider.error != null) const SizedBox(height: 16),
-              
-              // Submit Button
-              AnimatedButton(
-                onPressed: _submit,
-                isLoading: authProvider.isLoading,
-                child: Text(
-                  _isLogin ? 'Sign In' : 'Create Account',
-                  style: AppTextStyles.labelLarge.copyWith(color: Colors.white),
-                ),
-              ),
-              
-              const SizedBox(height: 24),
-              
-              // Toggle Auth Mode
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    _isLogin 
-                        ? "Don't have an account?" 
-                        : "Already have an account?",
-                    style: AppTextStyles.bodyMedium.copyWith(
+                
+                const SizedBox(height: 16),
+                
+                // Password Field
+                InputField(
+                  controller: _passwordController,
+                  label: 'Password',
+                  prefixIcon: Icons.lock_outline,
+                  obscureText: _obscurePassword,
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscurePassword 
+                          ? Icons.visibility_outlined 
+                          : Icons.visibility_off_outlined,
                       color: AppColors.onSurfaceVariant,
                     ),
+                    onPressed: () {
+                      setState(() {
+                        _obscurePassword = !_obscurePassword;
+                      });
+                    },
                   ),
-                  const SizedBox(width: 8),
-                  GestureDetector(
-                    onTap: _toggleAuthMode,
-                    child: Text(
-                      _isLogin ? 'Sign Up' : 'Sign In',
-                      style: AppTextStyles.labelLarge.copyWith(
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.w600,
-                      ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter your password';
+                    }
+                    if (value.length < 6) {
+                      return 'Password must be at least 6 characters';
+                    }
+                    return null;
+                  },
+                ),
+                
+                // Role Selection (only for registration)
+                if (!_isLogin) ...[
+                  const SizedBox(height: 16),
+                  Text(
+                    'Select Role',
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
+                  const SizedBox(height: 8),
+                  DropdownButtonFormField<String>(
+                    value: _selectedRole,
+                    decoration: InputDecoration(
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: AppColors.outline),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: AppColors.outline),
+                      ),
+                      filled: true,
+                      fillColor: AppColors.surface,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 16,
+                      ),
+                    ),
+                    items: const [
+                      DropdownMenuItem(
+                        value: 'driver',
+                        child: Text('Driver'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'manager',
+                        child: Text('Manager'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'admin',
+                        child: Text('Administrator'),
+                      ),
+                    ],
+                    onChanged: (value) {
+                      if (value != null) {
+                        setState(() {
+                          _selectedRole = value;
+                        });
+                      }
+                    },
+                    validator: (value) {
+                      if (!_isLogin && (value == null || value.isEmpty)) {
+                        return 'Please select a role';
+                      }
+                      return null;
+                    },
+                  ),
                 ],
-              ),
-            ],
+                
+                const SizedBox(height: 24),
+                
+                // Error Message
+                if (authProvider.error != null)
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppColors.error.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.error.withOpacity(0.3)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.error_outline, color: AppColors.error, size: 20),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            authProvider.error!,
+                            style: AppTextStyles.bodySmall.copyWith(color: AppColors.error),
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close, size: 16),
+                          onPressed: authProvider.clearError,
+                        ),
+                      ],
+                    ),
+                  ),
+                
+                if (authProvider.error != null) const SizedBox(height: 16),
+                
+                // Submit Button
+                AnimatedButton(
+                  onPressed: _submit,
+                  isLoading: authProvider.isLoading,
+                  child: Text(
+                    _isLogin ? 'Sign In' : 'Create Account',
+                    style: AppTextStyles.labelLarge.copyWith(color: Colors.white),
+                  ),
+                ),
+                
+                const SizedBox(height: 24),
+                
+                // Toggle Auth Mode
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      _isLogin 
+                          ? "Don't have an account?" 
+                          : "Already have an account?",
+                      style: AppTextStyles.bodyMedium.copyWith(
+                        color: AppColors.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    GestureDetector(
+                      onTap: _toggleAuthMode,
+                      child: Text(
+                        _isLogin ? 'Sign Up' : 'Sign In',
+                        style: AppTextStyles.labelLarge.copyWith(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
