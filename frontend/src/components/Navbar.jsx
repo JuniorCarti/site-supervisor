@@ -62,7 +62,7 @@ const Navbar = () => {
                   <User className="h-4 w-4" />
                 </div>
                 <div className="hidden md:flex flex-col items-start">
-                  <span className="text-sm font-medium">{user?.username}</span>
+                  <span className="text-sm font-medium">{user?.name}</span>
                   <span className={`text-xs px-2 py-0.5 rounded ${getRoleBadgeColor(user?.role)}`}>
                     {user?.role}
                   </span>
