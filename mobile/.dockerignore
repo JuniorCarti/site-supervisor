@@ -1,0 +1,16 @@
+build/
+.git
+.gitignore
+node_modules/
+android/
+ios/
+macos/
+windows/
+linux/
+test/
+*.iml
+*.lock
+pubspec.lock
+.idea/
+.vscode/
+.env
