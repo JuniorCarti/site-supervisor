@@ -1,9 +1,10 @@
+// shared/widgets/maintenance_alert_card.dart
 import 'package:flutter/material.dart';
 import '../../app/theme/app_theme.dart';
 import '../../core/models/maintenance_model.dart';
 
 class MaintenanceAlertCard extends StatelessWidget {
-  final MaintenanceRecord maintenance;
+  final MaintenanceReport maintenance;
   final VoidCallback? onTap;
 
   const MaintenanceAlertCard({
@@ -16,11 +17,11 @@ class MaintenanceAlertCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       elevation: 2,
-      color: _getSeverityColor(maintenance.severity).withOpacity(0.05),
+      color: _getPriorityColor(maintenance.priority).withOpacity(0.05),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
         side: BorderSide(
-          color: _getSeverityColor(maintenance.severity).withOpacity(0.2),
+          color: _getPriorityColor(maintenance.priority).withOpacity(0.2),
           width: 1,
         ),
       ),
@@ -36,12 +37,12 @@ class MaintenanceAlertCard extends StatelessWidget {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: _getSeverityColor(maintenance.severity).withOpacity(0.1),
+                  color: _getPriorityColor(maintenance.priority).withOpacity(0.1),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
-                  _getSeverityIcon(maintenance.severity),
-                  color: _getSeverityColor(maintenance.severity),
+                  _getPriorityIcon(maintenance.priority),
+                  color: _getPriorityColor(maintenance.priority),
                   size: 20,
                 ),
               ),
@@ -56,7 +57,7 @@ class MaintenanceAlertCard extends StatelessWidget {
                       children: [
                         Expanded(
                           child: Text(
-                            maintenance.equipmentId,
+                            maintenance.equipmentName,
                             style: AppTextStyles.titleSmall.copyWith(
                               fontWeight: FontWeight.w600,
                             ),
@@ -65,13 +66,13 @@ class MaintenanceAlertCard extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
-                            color: _getSeverityColor(maintenance.severity).withOpacity(0.1),
+                            color: _getPriorityColor(maintenance.priority).withOpacity(0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
-                            maintenance.severity.toUpperCase(),
+                            maintenance.priority.toUpperCase(),
                             style: AppTextStyles.labelSmall.copyWith(
-                              color: _getSeverityColor(maintenance.severity),
+                              color: _getPriorityColor(maintenance.priority),
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -97,28 +98,47 @@ class MaintenanceAlertCard extends StatelessWidget {
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          _formatDate(maintenance.createdAt),
+                          _formatDate(maintenance.reportedAt),
                           style: AppTextStyles.labelSmall.copyWith(
                             color: AppColors.onSurfaceVariant,
                           ),
                         ),
                         const Spacer(),
-                        if (maintenance.aiConfidence != null) ...[
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: _getStatusColor(maintenance.status).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            maintenance.status.toUpperCase(),
+                            style: AppTextStyles.labelSmall.copyWith(
+                              color: _getStatusColor(maintenance.status),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (maintenance.assignedSupplier != null) ...[
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
                           const Icon(
-                            Icons.psychology,
+                            Icons.business,
                             size: 14,
                             color: AppColors.onSurfaceVariant,
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            '${(maintenance.aiConfidence! * 100).toInt()}% AI',
+                            'Assigned: ${maintenance.assignedSupplier}',
                             style: AppTextStyles.labelSmall.copyWith(
                               color: AppColors.onSurfaceVariant,
                             ),
                           ),
                         ],
-                      ],
-                    ),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -129,8 +149,8 @@ class MaintenanceAlertCard extends StatelessWidget {
     );
   }
 
-  Color _getSeverityColor(String severity) {
-    switch (severity) {
+  Color _getPriorityColor(String priority) {
+    switch (priority) {
       case 'critical':
         return AppColors.error;
       case 'high':
@@ -144,8 +164,25 @@ class MaintenanceAlertCard extends StatelessWidget {
     }
   }
 
-  IconData _getSeverityIcon(String severity) {
-    switch (severity) {
+  Color _getStatusColor(String status) {
+    switch (status) {
+      case 'pending':
+        return AppColors.warning;
+      case 'in-progress':
+        return AppColors.primary;
+      case 'completed':
+        return AppColors.success;
+      case 'approved':
+        return AppColors.success;
+      case 'rejected':
+        return AppColors.error;
+      default:
+        return AppColors.onSurfaceVariant;
+    }
+  }
+
+  IconData _getPriorityIcon(String priority) {
+    switch (priority) {
       case 'critical':
         return Icons.error_outline;
       case 'high':
