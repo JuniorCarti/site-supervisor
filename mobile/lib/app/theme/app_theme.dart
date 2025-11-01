@@ -138,6 +138,8 @@ class AppTextStyles {
 }
 
 class AppTheme {
+  static var darkTheme;
+
   static ThemeData get lightTheme {
     return ThemeData(
       useMaterial3: true,

@@ -53,7 +53,15 @@ def create_app():
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False  # ✅ Performance improvement
 
     # Initialize extensions
-    CORS(app, resources={r"/api/*": {"origins": "*"}})
+    CORS(app, 
+        resources={
+            r"/api/*": {
+                "origins": ["*"],
+                "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+                "allow_headers": ["Content-Type", "Authorization", "Accept"]
+            }
+        },
+        supports_credentials=True)
     db.init_app(app)
     migrate.init_app(app, db)
     jwt.init_app(app)

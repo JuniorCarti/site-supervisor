@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:badges/badges.dart' as badges;
+import 'package:site_supervisor/core/models/equipment_model.dart';
+import 'package:site_supervisor/features/auth/presentation/screens/equipment_details_screen.dart';
 import 'package:syncfusion_flutter_gauges/gauges.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../../shared/widgets/stat_card.dart';
@@ -123,9 +125,6 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
       // Floating Action Button for Quick Actions
       floatingActionButton: _buildFloatingActionButton(),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      
-      // Bottom Navigation Bar
-      bottomNavigationBar: _buildBottomNavigationBar(),
     );
   }
 
@@ -192,9 +191,7 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
             border: Border.all(color: AppColors.outline),
           ),
           child: ClipOval(
-            child: provider.currentUser?.avatar != null
-                ? Image.network(provider.currentUser!.avatar!, fit: BoxFit.cover)
-                : const Icon(Icons.person_outline, size: 20),
+            child: _buildUserAvatar(provider),
           ),
         ),
         const SizedBox(width: 16),
@@ -202,7 +199,25 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
     );
   }
 
+  Widget _buildUserAvatar(DashboardProvider provider) {
+    final currentUser = provider.currentUser;
+    
+    if (currentUser?.avatar != null && currentUser!.avatar!.isNotEmpty) {
+      return Image.network(
+        currentUser.avatar!,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return const Icon(Icons.person_outline, size: 20);
+        },
+      );
+    } else {
+      return const Icon(Icons.person_outline, size: 20);
+    }
+  }
+
   Widget _buildWelcomeSection(DashboardProvider provider) {
+    final userName = provider.currentUser?.name ?? 'Site Manager';
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -214,7 +229,7 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
         ),
         const SizedBox(height: 4),
         Text(
-          provider.currentUser?.name ?? 'Site Manager',
+          userName,
           style: AppTextStyles.headlineSmall.copyWith(
             fontWeight: FontWeight.w700,
           ),
@@ -498,7 +513,13 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
         ...provider.recentEquipment.take(3).map((equipment) {
           return Padding(
             padding: const EdgeInsets.only(bottom: 12),
-            child: EquipmentCard(equipment: equipment),
+            child: EquipmentCard(
+              equipment: equipment,
+              onTap: () => _navigateToEquipmentDetails(context, equipment),
+              onEdit: () => _showEditEquipmentDialog(context, equipment),
+              onDelete: () => _showDeleteEquipmentDialog(context, equipment.id),
+              isSelected: false,
+            ),
           );
         }),
         if (provider.recentEquipment.length > 3)
@@ -509,6 +530,7 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
               child: TextButton(
                 onPressed: () {
                   // Navigate to equipment list
+                  _navigateToEquipmentScreen(context);
                 },
                 child: Text(
                   'View all ${provider.recentEquipment.length} equipment',
@@ -528,7 +550,8 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
       margin: const EdgeInsets.only(bottom: 70),
       child: FloatingActionButton(
         onPressed: () {
-          // Quick action - report maintenance
+          // Quick action - report maintenance or add equipment
+          _showQuickActionsDialog(context);
         },
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
@@ -538,54 +561,154 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
     );
   }
 
-  Widget _buildBottomNavigationBar() {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 20,
-            offset: const Offset(0, -5),
+  // Navigation Methods
+  void _navigateToEquipmentScreen(BuildContext context) {
+    // This would navigate to the main equipment screen
+    // For now, we'll just show a snackbar
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Navigating to Equipment Screen')),
+    );
+  }
+
+  void _navigateToEquipmentDetails(BuildContext context, Equipment equipment) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => EquipmentDetailsScreen(equipment: equipment),
+      ),
+    );
+  }
+
+  void _showEditEquipmentDialog(BuildContext context, Equipment equipment) {
+    // This would show the edit equipment dialog
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Editing ${equipment.name}')),
+    );
+  }
+
+  void _showDeleteEquipmentDialog(BuildContext context, String equipmentId) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Equipment'),
+        content: const Text('Are you sure you want to delete this equipment?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              // Delete equipment logic would go here
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Equipment deleted')),
+              );
+            },
+            child: const Text(
+              'Delete',
+              style: TextStyle(color: Colors.red),
+            ),
           ),
         ],
       ),
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildNavItem(Icons.dashboard_outlined, 'Dashboard', true),
-              _buildNavItem(Icons.construction_outlined, 'Equipment', false),
-              _buildNavItem(Icons.build_outlined, 'Maintenance', false),
-              _buildNavItem(Icons.assignment_outlined, 'Projects', false),
-              _buildNavItem(Icons.person_outlined, 'Profile', false),
-            ],
-          ),
+    );
+  }
+
+  void _showQuickActionsDialog(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Quick Actions',
+              style: AppTextStyles.titleMedium.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 24),
+            _buildQuickActionItem(
+              context,
+              Icons.add,
+              'Add New Equipment',
+              'Register new equipment to fleet',
+              () {
+                Navigator.pop(context);
+                _showAddEquipmentDialog(context);
+              },
+            ),
+            _buildQuickActionItem(
+              context,
+              Icons.build_outlined,
+              'Report Maintenance',
+              'Create maintenance request',
+              () {
+                Navigator.pop(context);
+                _showReportMaintenanceDialog(context);
+              },
+            ),
+            _buildQuickActionItem(
+              context,
+              Icons.assignment_outlined,
+              'Create Project',
+              'Start new construction project',
+              () {
+                Navigator.pop(context);
+                _showCreateProjectDialog(context);
+              },
+            ),
+            const SizedBox(height: 16),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildNavItem(IconData icon, String label, bool isActive) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(
-          icon,
-          size: 24,
-          color: isActive ? AppColors.primary : AppColors.onSurfaceVariant,
+  Widget _buildQuickActionItem(
+    BuildContext context,
+    IconData icon,
+    String title,
+    String subtitle,
+    VoidCallback onTap,
+  ) {
+    return ListTile(
+      leading: Container(
+        width: 48,
+        height: 48,
+        decoration: BoxDecoration(
+          color: AppColors.primary.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12),
         ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: AppTextStyles.labelSmall.copyWith(
-            color: isActive ? AppColors.primary : AppColors.onSurfaceVariant,
-            fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
-          ),
-        ),
-      ],
+        child: Icon(icon, color: AppColors.primary),
+      ),
+      title: Text(title, style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600)),
+      subtitle: Text(subtitle, style: AppTextStyles.bodySmall.copyWith(color: AppColors.onSurfaceVariant)),
+      onTap: onTap,
+      contentPadding: const EdgeInsets.symmetric(vertical: 8),
+    );
+  }
+
+  void _showAddEquipmentDialog(BuildContext context) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Opening Add Equipment Dialog')),
+    );
+  }
+
+  void _showReportMaintenanceDialog(BuildContext context) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Opening Report Maintenance Dialog')),
+    );
+  }
+
+  void _showCreateProjectDialog(BuildContext context) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Opening Create Project Dialog')),
     );
   }
 

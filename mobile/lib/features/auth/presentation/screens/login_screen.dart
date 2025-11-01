@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:lottie/lottie.dart';
 import 'package:animations/animations.dart';
 import '../../../../app/theme/app_theme.dart';
 import '../../../../shared/widgets/animated_button.dart';
@@ -305,15 +306,15 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                 ),
                 const SizedBox(height: 8),
                 DropdownButtonFormField<String>(
-                  initialValue: _selectedRole,
+                  value: _selectedRole,
                   decoration: InputDecoration(
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: AppColors.outline),
+                      borderSide: BorderSide(color: AppColors.outline),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: AppColors.outline),
+                      borderSide: BorderSide(color: AppColors.outline),
                     ),
                     filled: true,
                     fillColor: AppColors.surface,
