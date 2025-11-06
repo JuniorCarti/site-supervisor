@@ -11,6 +11,7 @@ from utils.ai_agents import sentinel_agent, quartermaster_agent, chancellor_agen
 from utils.notification import notify_event
 from utils.automation import trigger_workflow
 from utils.analytics import get_dashboard_stats, get_trend_data, generate_analytics_insight
+from sqlalchemy import inspect
 
 
 # Initialize extensions
@@ -637,6 +638,14 @@ def create_app():
 
 
 app = create_app()
+with app.app_context():
+    inspector = inspect(db.engine)
+    if not inspector.get_table_names():
+        print("📦 No tables found. Creating all tables...")
+        db.create_all()
+        print("✅ Tables created successfully!")
+    else:
+        print("✅ Tables already exist, skipping creation.")
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host="0.0.0.0", port=5000)
