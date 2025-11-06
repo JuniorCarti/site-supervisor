@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:5000/api' || 'https://site-supervisor-1.onrender.com';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://site-supervisor-1.onrender.com/api';
 console.log("✅ API Base URL:", API_BASE_URL);
 
 const axiosInstance = axios.create({
