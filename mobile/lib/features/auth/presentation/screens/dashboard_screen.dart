@@ -131,7 +131,7 @@ class _DashboardScreenState extends State<DashboardScreen> with SingleTickerProv
         height: screenHeight + _scrollOffset,
         decoration: BoxDecoration(
           image: DecorationImage(
-            image: NetworkImage(
+            image: const NetworkImage(
               'https://images.pexels.com/photos/7245366/pexels-photo-7245366.jpeg',
             ),
             fit: BoxFit.cover,

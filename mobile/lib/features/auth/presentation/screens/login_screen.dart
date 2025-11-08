@@ -154,7 +154,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     return Container(
       width: double.infinity,
       height: double.infinity,
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         image: DecorationImage(
           image: NetworkImage(
             'https://images.pexels.com/photos/60008/brown-coal-energy-garzweiler-bucket-wheel-excavators-60008.jpeg',
@@ -369,11 +369,11 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                     decoration: InputDecoration(
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: AppColors.outline),
+                        borderSide: const BorderSide(color: AppColors.outline),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: AppColors.outline),
+                        borderSide: const BorderSide(color: AppColors.outline),
                       ),
                       filled: true,
                       fillColor: AppColors.surface,
